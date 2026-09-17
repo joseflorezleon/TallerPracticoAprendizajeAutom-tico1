@@ -1,0 +1,44 @@
+# ============================================
+# Datos sensibles / información de clientes (Ingenio Providencia)
+# NO se tiene permiso para publicar estos datos -> nunca deben subirse
+# ============================================
+ArchivosImportantes/*.xlsx
+ArchivosImportantes/*.xls
+ArchivosImportantes/*.csv
+
+# Por si en el futuro se agregan más archivos de datos crudos en otras carpetas
+data/
+DATA/
+Data/
+*.xlsx
+*.xls
+
+# Excepciones explícitas (archivos que SÍ se pueden versionar aunque coincidan
+# con los patrones de arriba, porque no contienen datos de clientes):
+!ArchivosImportantes/BD_cana.pdf
+!ArchivosImportantes/Formato presentacion documentos.doc
+!Diccionario/BD_cana.pdf
+
+# ============================================
+# Entornos virtuales de Python
+# ============================================
+.venv/
+venv/
+env/
+ENV/
+Session5/
+venv_session3/
+
+# ============================================
+# Cachés y artefactos de Python / Jupyter
+# ============================================
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# ============================================
+# Sistema operativo / editor
+# ============================================
+.DS_Store
+Thumbs.db
+.vscode/

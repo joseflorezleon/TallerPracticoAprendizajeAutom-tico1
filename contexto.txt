@@ -1,0 +1,132 @@
+El Ingenio Providencia cuenta con un conjunto de datos históricos que recoge información relevante sobre la producción de caña de azúcar. Este taller tiene como objetivo que ustedes, como estudiantes, apliquen los conocimientos adquiridos en el curso para desarrollar modelos que permitan desarrollar las siguientes tareas:
+
+ 1.      Regresión (HISTORICO_SUERTES.xlsx): Predecir dos variables clave:
+
+Toneladas de caña por hectárea (TCH): Indicador de la productividad de la tierra.
+Porcentaje de sacarosa (%Sac.Caña): Medida de la calidad de la caña y la cantidad de azúcar extraíble.
+
+2.      Clasificación (BD_IPSA_1940.xlsx): A partir de las variables continuas (TCH y %Sac.Caña), crear categorías que permitan clasificar los registros en niveles de desempeño:
+
+Para %Sac.Caña: Niveles de sacarosa alto, medio y bajo.
+Para TCH: Niveles alto, medio y bajo.
+Introducción y Contexto del Negocio (Tarea 1)
+Antes de escribir una sola línea de código, deben comprender el negocio. Su primera tarea es investigar y documentar, en su informe, el contexto de la producción de caña de azúcar en Colombia, específicamente en el Valle del Cauca. Esta contextualización es crucial para tomar decisiones informadas sobre las variables y los modelos.
+
+Deben buscar y sintetizar información de fuentes confiables (artículos científicos, informes del sector, noticias especializadas) para responder a preguntas como:
+
+Importancia Económica y Social: ¿Cuál es el impacto del sector azucarero en la economía del Valle del Cauca y de Colombia? Mencionen cifras clave como su participación en el PIB, generación de empleo y número de ingenios .
+
+Factores Clave del Rendimiento:
+
+TCH (Toneladas de Caña por Hectárea): ¿Qué factores agronómicos (clima, suelo, variedad, edad del cultivo, riego, fertilización) determinan la productividad en toneladas de caña por hectárea? .
+
+Porcentaje de Sacarosa (%Sac.Caña): ¿Qué factores influyen en la calidad de la caña, es decir, en su contenido de azúcar? Investiguen sobre la importancia de la maduración, las variedades y las condiciones climáticas .
+
+El Ingenio Providencia: ¿Qué características particulares tiene el Ingenio Providencia? ¿Cuáles son sus prácticas de sostenibilidad y cómo podrían estas influir en los datos (por ejemplo, producción orgánica vs. convencional, rendimientos, uso de tecnología)? .
+
+Estado del Arte en Predicción: ¿Cómo se está utilizando el machine learning en la agricultura de precisión y, específicamente, en la predicción de rendimientos de cultivos? ¿Qué modelos y variables han demostrado ser más efectivos? .
+
+Esta investigación no es un mero trámite. Les permitirá, por ejemplo, entender por qué la variable lluvias es fundamental, por qué la variedad del cultivo debe ser considerada o por qué la edad y los cortes son predictores importantes del rendimiento.
+
+Análisis Exploratorio de Datos (EDA) y Preprocesamiento (Tarea 2)
+Con el contexto del negocio claro, ahora deben sumergirse en los datos. El objetivo es entender su estructura, calidad y relaciones subyacentes.
+
+Selección y Justificación de Variables:
+
+Para Regresión (Dataset HISTORICO_SUERTES.xlsx): Además de las obvias (TCH, %Sac.Caña), identifiquen qué variables, basadas en su investigación, deberían ser los mejores predictores. Por ejemplo, Edad Ult Cos, Variedad, Suelo, Dist Km, Dosis Madurante, Semanas mad., F.Siembra (para derivar edad). Justifiquen por qué descartan otras variables (por ejemplo, Nombre o Cod.Estado si son identificadores sin poder predictivo).
+
+Para Clasificación (Dataset BD_IPSA_1940.xlsx): El objetivo es clasificar usando TCH y %Sac.Caña. Sin embargo, para los modelos de clasificación, deberán elegir un conjunto de predictores. Usen el contexto del negocio para seleccionar las variables más relevantes (por ejemplo, variedad, edad, cortes, lluvias, grupo_tenencia, pct_diatrea). Justifiquen su selección.
+
+Manejo de Datos Faltantes y Calidad de Datos:
+
+Realicen un análisis exhaustivo de valores nulos en ambos datasets. Calculen el porcentaje de missing values por columna.
+
+Propongan y justifiquen una estrategia de imputación. No se limiten a la media. Por ejemplo, para una variable como lluvias, podrían imputar por la media de una zona o periodo similar. Para dosis_mad, podrían imputar con 0 si "sin dato" significa que no se aplicó.
+
+Identifiquen y decidan qué hacer con las variables que tienen un alto porcentaje de datos faltantes. ¿Es mejor imputarlas con un alto grado de incertidumbre o descartarlas?
+
+Análisis Exploratorio Profundo:
+
+Visualicen distribuciones: Usen histogramas y boxplots para TCH y %Sac.Caña. ¿Son normales? ¿Hay valores atípicos (outliers) que podrían ser errores de registro o casos especiales de alto/bajo rendimiento? .
+
+Analicen relaciones: Usen gráficos de dispersión y matrices de correlación para entender cómo se relacionan las variables predictoras con TCH y %Sac.Caña. Por ejemplo, TCH vs. Edad, o %Sac.Caña vs. lluvias en el periodo de maduración.
+
+Detecten multicolinealidad: Calculen el Factor de Inflación de la Varianza (VIF) para las variables seleccionadas en los modelos de regresión. Esto es crucial para la regresión lineal.
+
+Metodología de Modelamiento (Tarea 3)
+Seguirán una estrategia de modelamiento que va de lo simple a lo complejo, permitiéndoles comparar y justificar la elección del mejor modelo.
+
+Modelos de Referencia (Benchmark):
+
+Regresión: Implementen una Regresión Lineal Múltiple para predecir TCH y %Sac.Caña. El objetivo aquí no es solo predecir, sino interpretar. Analicen la significancia estadística de los coeficientes (p-values), sus signos (positivo/negativo) y magnitud. Evalúen los supuestos del modelo (linealidad, homocedasticidad, normalidad de los residuos) mediante gráficos diagnósticos .
+
+Clasificación: Implementen una Regresión Logística (multinomial, ya que tienen 3 clases) y K-Vecinos Más Cercanos (KNN) para clasificar los niveles de TCH y %Sac.Caña. Optimicen el hiperparámetro k para KNN y usen regularización (L1 o L2) en la regresión logística para analizar la importancia y selección de variables.
+
+ 
+Justificación: Expliquen las limitaciones que pueden tener el modelo lineal y de que forma estos modelos podrían funcionar mejor  (por ejemplo, como modelar interacciones complejas entre lluvias, tipo de suelo y variedad que afectan el TCH).
+
+Interpretabilidad: determinar qué variables (ej. Edad Ult Cos, Dosis Madurante, lluvias) son las más influyentes en la predicción, conectando estos hallazgos con el contexto del negocio .
+
+Validación Rigurosa:
+
+Dividan sus datos en entrenamiento (80%) y prueba (20%) desde el principio (hold-out validation).
+
+Para el ajuste de hiperparámetros y la selección de modelos, utilicen validación cruzada de k-vueltas (k-fold cross-validation), típicamente con k=5 o k=10, sobre el conjunto de entrenamiento. Esto evita el sobreajuste y da una estimación más robusta del desempeño del modelo.
+
+Reporte de Resultados (Tarea 4)
+El informe final debe ser un documento técnico de alta calidad, siguiendo un formato con la plantilla compartida. Debe ser claro, conciso (máx. 5 páginas) y estar bien estructurado.
+
+Estructura Sugerida del Informe:
+
+Título, Autores y Resumen (Abstract): Un resumen ejecutivo del problema, la metodología y los principales hallazgos.
+
+Introducción: Presenten el problema de negocio del Ingenio Providencia, la importancia de predecir TCH y %Sac.Caña, y los objetivos del estudio. Incluyan aquí el contexto investigado en la Tarea 1.
+
+Metodología:
+
+Datos y Preprocesamiento: Describan los datasets, las variables seleccionadas (justificando su elección), el manejo de valores nulos y el análisis de outliers (Tarea 2).
+
+Modelos: Detallen los modelos utilizados (desde los de referencia hasta los avanzados), las estrategias de validación (hold-out y validación cruzada) y las métricas de evaluación seleccionadas (R², RMSE, MAE para regresión; Accuracy, Precision, Recall, F1-score, Kappa para clasificación).
+
+Resultados y Discusión: Esta es la sección central.
+
+Presenten los resultados de forma organizada (tablas comparativas del desempeño de todos los modelos).
+
+Interpreten los resultados a la luz del contexto del negocio. Por ejemplo: "El modelo M1 superó al modelo M2 con un RMSE de XX, lo que sugiere que las relaciones entre las variables climáticas y el TCH son complejas y no lineales, consistente con lo hallado en la literatura ." O "La regresión logística con regularización identificó que la 'edad del cultivo' y la 'dosis de madurante' son los predictores más importantes para clasificar un lote como de 'Alta' sacarosa, lo que tiene sentido agronómico ya que..." .
+
+Incluyan visualizaciones de apoyo: gráficos de importancia de características, matrices de confusión para clasificación, gráficos de valores reales vs. predichos para regresión.
+
+Conclusiones y Trabajo Futuro:
+
+Resuman los hallazgos clave y la utilidad de los modelos para la toma de decisiones en el Ingenio Providencia.
+
+Propongan mejoras concretas: ¿Qué otras variables (ej. datos de sensores, imágenes satelitales) serían útiles?  ¿Cómo se podría implementar un sistema de monitoreo en tiempo real? ¿Cuáles son las limitaciones éticas o prácticas de sus modelos?
+
+IMPORTANTE: Criterios de Evaluación
+Claridad y Rigor en el Análisis:
+Presentación ordenada del EDA.
+Justificación de las decisiones tomadas durante la transformación y preprocesamiento de datos.
+Desarrollo y Ajuste de los Modelos:
+Correcta implementación de los modelos de regresión y clasificación.
+Interpretación adecuada de los resultados, incluyendo la significancia de las variables y los supuestos del modelo.
+Validación y Métricas:
+Selección y aplicación correcta de las estrategias de validación.
+Uso adecuado de las métricas de evaluación y análisis crítico de los resultados obtenidos.
+Comunicación de Resultados:
+Informe escrito claro y conciso que explique el proceso, resultados y conclusiones.
+Visualizaciones y gráficos que respalden el análisis realizado.
+Innovación y Propuesta de Mejora:
+Propuestas para mejorar el modelo (por ejemplo, la inclusión de técnicas de regularización o selección de variables) y discusión sobre posibles limitaciones.
+ Entregables
+
+Código Fuente: Archivo(s) con la implementación del análisis y modelado (Jupyter Notebook).
+Informe Final: Documento (de no más de 5 páginas) en el que se detalle el proceso completo del análisis, resultados, interpretaciones y conclusiones. No anexar el código al documento. Formato compartido.
+ 
+
+Recomendaciones Finales
+
+Asegúrense de documentar bien el código y de comentar las secciones relevantes para facilitar la comprensión del proceso.
+
+Revisen y apliquen los conceptos vistos en clase, especialmente los relacionados con la validación, las métricas de evaluación y las técnicas de regularización.
+
+Ser críticos en el análisis de resultados y propongan mejoras o futuras líneas de trabajo basadas en los hallazgos.
