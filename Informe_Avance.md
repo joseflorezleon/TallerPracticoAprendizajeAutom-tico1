@@ -6,7 +6,13 @@
 
 ## Tarea 1 — Introducción y Contexto del Negocio
 
-### 1.1 Importancia Económica y Social del sector azucarero (Valle del Cauca y Colombia)
+> **Cambio (28/9/2026):** la introducción del notebook se reescribió para que siga el documento del equipo `Recursos/Taller Cana de Azucar - Introducción.docx` (dos párrafos y las mismas 9 referencias, con el texto en un tono más natural). Lo que aparece debajo es la **versión extendida anterior**: ya no está en el notebook, pero se conserva aquí como material de apoyo (las cifras sirven para la sustentación oral).
+>
+> No se tocó nada de lo que el equipo editó a mano: los nombres del encabezado (celda 0) y las celdas de la sección 3.2 (interpretación de la correlación y propuesta de `TCH × %Sacarosa/100`).
+>
+> Pendiente de revisar en las referencias: la [7] dice "Ingenio Providencia produce el 15% del azúcar en Colombia (2024)", pero el enlace del documento apunta a una nota titulada "100 años Ingenio Providencia" (2026). Conviene confirmar que título y enlace sean la misma fuente.
+
+### (Material de apoyo) 1.1 Importancia Económica y Social del sector azucarero (Valle del Cauca y Colombia)
 
 La agroindustria de la caña de azúcar es uno de los pilares económicos del Valle del Cauca:
 
@@ -86,10 +92,87 @@ La calidad de la caña (contenido de azúcar extraíble) depende de:
 ---
 
 ## Tarea 2 — Análisis Exploratorio de Datos (EDA) y Preprocesamiento
-*(Pendiente — siguiente paso)*
+
+Desarrollada directamente en el notebook (`Notebooks/Taller_Ingenio_Providencia.ipynb`, secciones 3.1 a 3.12), no en este documento. Resumen de lo que quedó decidido ahí:
+
+- Se filtraron 294 registros de semilla del dataset de regresión.
+- TCH y %Sac.Caña tienen correlación baja (r = -0.168) → se modelan por separado.
+- Se identificaron y excluyeron ~16 variables de *data leakage* (TCHM, TAH, Rdto, Brix, Pureza, etc.), con evidencia numérica de correlación.
+- Imputación de nulos según el significado real del vacío (`Producto`/`Dosis Madurante` = "no se aplicó madurante", no una media genérica).
+- Vacío estructural de variables climáticas de estación (78% nulas, 2017-2021) documentado como limitación, no imputado con la media global.
+- Outliers de TCH evaluados con criterio de negocio (umbrales del Ingenio), no con IQR ciego.
+- Chequeo de información mutua para las lluvias (Pearson bajo, pero sí aportan señal no lineal).
+- VIF máximo ≈ 5.2 entre las variables numéricas (sin multicolinealidad severa).
+- **Definición de niveles alto/medio/bajo para clasificación — cambiado el 1/10/2026:** el profesor indicó que los umbrales de negocio del Ingenio no se pueden usar aquí (son el tema de otro documento del curso). Se reemplazaron por un método estadístico: recortar 5% de cada extremo de la distribución y dividir el resto en tercios. Umbrales resultantes: **TCH ≤127/≤155** (antes 125/150) y **Sacarosa ≤12,33/≤13,27** (antes 12,2/12,9). Esto obligó a recalcular toda la Tarea 3 de clasificación y la Tarea 4 — ver más abajo.
+- **Visualización exploratoria (sección 3.9.1, agregada a partir de la propuesta del equipo en `categorizacion variables.docx`):** mapa de calor de correlación, scatterplots de cada numérica vs. cada objetivo, boxplots de outliers de las variables predictoras, y barras/pastel para las categóricas — confirma visualmente que `Cultivo orgánico` tiene menos sacarosa y que `Tipo Quema accidental` tiene menos TCH.
+
+### ✅ Resuelto — propuesta del equipo sobre variables (`categorizacion variables.docx`)
+
+El equipo propuso agregar `Pureza`, `Fosfato Jugo` y `Urea 46%` como predictoras. Se verificó que **`Pureza` y `Fosfato Jugo` nunca llegaron a incluirse en el código** (el notebook ya las excluye desde la sección 3.4, por ser variables de leakage — `Pureza` está nombrada explícitamente como ejemplo de leakage en el FAQ del profesor).
+
+Sobre los fertilizantes, en vez de usar `Urea 46%` sola (solo 3.4% de cobertura), se siguió la propuesta final del equipo: **`usa_fertilizante`**, una bandera binaria que combina los 7 fertilizantes comerciales (`NITO_XTEND`, `Sul.Amonio`, `Boro Granul.`, `MicroZinc`, `MEZ`, `NITRAX-S`, `Urea 46%`), excluyendo explícitamente `Vinaza` (no es fertilizante, es subproducto de la caña para alcohol carburante). Quedó con distribución 76%/24% (ni rara ni dominante), así que se incluyó como variable candidata en ambos modelos de regresión — ya está en el notebook, sección 3.5 y 3.9.
+
+### 📝 Nota abierta / boceto — variable combinada TCH × %Sacarosa/100 (pendiente de decidir)
+
+Durante el EDA se calculó `TAH_aprox = TCH * %Sac.Caña / 100` únicamente como comprobación: confirma que la columna real `TAH` (ya excluida por leakage) es prácticamente reconstruible a partir de los dos objetivos (r = 0.99 contra `TAH`).
+
+Mis compañeros de equipo, trabajando sobre el mismo notebook, propusieron ir más allá y **usar esa misma fórmula como una tercera variable objetivo** (no solo como comprobación), con la idea de que captura mejor el propósito real del negocio: cantidad y calidad de caña juntas, no por separado. También ajustaron el texto de interpretación de la correlación TCH vs. %Sac.Caña (celda 19 del notebook).
+
+Puntos a resolver antes de la entrega final (quedan aquí documentados para retomarlos, ya que por ahora el notebook es solo un boceto):
+
+1. **Decidir si se implementa el tercer modelo** (`TAH_aprox` como objetivo, predicho con las variables agronómicas ya seleccionadas — nunca con TCH o %Sac.Caña como predictores, porque ahí sí sería leakage).
+2. Si se implementa, dejar clarísimo en el informe que es un **modelo adicional/bono**, no un reemplazo de los dos que pide explícitamente el enunciado del taller (TCH y %Sac.Caña por separado).
+3. Revisar la redacción de la celda 19: quedó como "no se puede observar una relación clara, ni lineal ni no lineal" — es un poco impreciso, porque sí existe una correlación (débil, r=-0.168); conviene ajustarla para que sea numéricamente exacta antes de la entrega.
+
+*(Decisión pospuesta a propósito — se retoma cuando el equipo avance más el boceto.)*
 
 ## Tarea 3 — Metodología de Modelamiento
-*(Pendiente)*
+
+Desarrollada en el notebook (sección 4). Protocolo: hold-out 80/20 primero, hiperparámetros con validación cruzada de 5 vueltas solo sobre el train, y todo el preprocesamiento (imputar, escalar, codificar) dentro de un `Pipeline`.
+
+**Regresión** (`HISTORICO_SUERTES`, 20.733 lotes sin semilla; regresión lineal, Ridge y Lasso):
+
+| Objetivo | R² CV | R² test | RMSE test | MAE test |
+|---|---|---|---|---|
+| TCH | 0,251 | 0,238 | 28,3 t/ha | 21,3 t/ha |
+| %Sac.Caña | 0,283 | 0,289 | 0,97 | 0,75 |
+
+- Ridge y Lasso quedan igual que la lineal (sin sobreajuste; CV y test coinciden).
+- Supuestos: Breusch-Pagan y Shapiro-Wilk rechazan (p ≈ 0); Durbin-Watson ≈ 2. Los p-valores son poco confiables, así que se interpretan tamaño y signo.
+- TCH: pesan la edad (+9,5 t/ha por desviación estándar), el corte (-4,5), la distancia (-3,5) y, sobre todo, suelo y zona.
+- Sacarosa: orgánico (-1,18 pts), sin madurante (-0,70 pts) y lluvia de los 2 meses previos (-0,26 por desviación estándar). La dosis casi no agrega una vez se sabe si se aplicó madurante.
+
+**Clasificación** (`BD_IPSA_1940`, 2.187 lotes, 438 en test; logística L1/L2, logística balanceada y KNN, contra una referencia que siempre responde la clase más común) — **con los umbrales nuevos de recorte 5%+tercios**:
+
+| Objetivo | Mejor F1 macro (partición al azar) | Recall "Bajo": logística normal → balanceada | Kappa |
+|---|---|---|---|
+| TCH | KNN, 0,446 (k = 3) | 0,13 → 0,43 | 0,11 a 0,16 |
+| Sacarosa | KNN, 0,467 (k = 15) | 0,34 → 0,49 | 0,16 a 0,18 |
+
+- L1 y L2 dan prácticamente lo mismo.
+- **Hallazgo (revisado con el nuevo umbral):** en TCH, bajo partición por finca-periodo, KNN (0,389) y la logística balanceada (0,384) quedan casi empatados — la ventaja de KNN se redujo pero no desapareció del todo. En sacarosa el patrón se invierte: la que más cae con esa validación es la logística balanceada (0,438→0,374), mientras KNN se mantiene estable (0,467→0,448) y gana en precisión y recall a la vez para las alertas de "Bajo" (55% / 51%, contra 45% / 49% de la logística balanceada).
+- Un signo por revisar con el Ingenio: `pct_diatrea` sale con efecto contrario al esperado en TCH Bajo — **persiste igual con los dos criterios de umbral**, así que no es un artefacto del umbral de negocio.
+
+**Pendiente (Tarea 4):** tablas y gráficos para el informe, y la interpretación de negocio final.
 
 ## Tarea 4 — Reporte de Resultados
-*(Pendiente)*
+
+Desarrollada en el notebook (sección 5) y convertida en el informe final `Informe_Final_IEEE.docx`/`.pdf` (formato IEEE, 2 columnas, sin código). **Pendiente de regenerar el informe IEEE con los números de clasificación nuevos** (umbral de recorte 5%+tercios) — las cifras de abajo ya están actualizadas en el notebook, pero el `.docx` todavía tiene las del umbral del Ingenio.
+
+**Importancia de variables (permutación):**
+
+| | Regresión (no cambia con el umbral) | Clasificación (con el umbral nuevo) |
+|---|---|---|
+| TCH | Edad al cosechar domina (caída R² 0,182) | `cortes` domina (caída F1 0,055), `edad` 2.º (0,036) |
+| Sacarosa | Si se aplicó madurante domina (caída R² 0,201), luego lluvia 2 meses (0,106) | `lluvias` domina (caída F1 0,066), `semsmad` 2.º (0,039) |
+
+**Valor de negocio de las alertas "Bajo" (con el umbral nuevo):**
+
+| Objetivo | Modelo | Reales | Alertas | Precisión | Recall | Vs. azar |
+|---|---|---|---|---|---|---|
+| TCH | Log. balanceada | 116 | 143 | 35% | 43% | 1,3× |
+| TCH | KNN | 116 | 92 | 42% | 34% | 1,6× |
+| Sacarosa | Log. balanceada | 134 | 146 | 45% | 49% | 1,5× |
+| Sacarosa | KNN | 134 | 124 | 55% | 51% | 1,8× |
+
+Con el umbral nuevo, KNN gana en las dos métricas a la vez para sacarosa (ya no hay que elegir entre precisión y recall ahí); para TCH sigue existiendo el mismo compromiso que antes.
