@@ -97,12 +97,12 @@ Desarrollada directamente en el notebook (`Notebooks/Taller_Ingenio_Providencia.
 
 - Se filtraron 294 registros de semilla del dataset de regresión.
 - TCH y %Sac.Caña tienen correlación baja (r = -0.168) → se modelan por separado.
-- Se identificaron y excluyeron ~16 variables de *data leakage* (TCHM, TAH, Rdto, Brix, Pureza, etc.), con evidencia numérica de correlación.
+- Se identificaron y excluyeron 17 variables de *data leakage* (TCHM, TAH, Rdto, Brix, Pureza, etc.), con evidencia numérica de correlación.
 - Imputación de nulos según el significado real del vacío (`Producto`/`Dosis Madurante` = "no se aplicó madurante", no una media genérica).
 - Vacío estructural de variables climáticas de estación (78% nulas, 2017-2021) documentado como limitación, no imputado con la media global.
 - Outliers de TCH evaluados con criterio de negocio (umbrales del Ingenio), no con IQR ciego.
 - Chequeo de información mutua para las lluvias (Pearson bajo, pero sí aportan señal no lineal).
-- VIF máximo ≈ 5.2 entre las variables numéricas (sin multicolinealidad severa).
+- VIF máximo ≈ 4.1 entre las variables numéricas (sin multicolinealidad severa).
 - **Definición de niveles alto/medio/bajo para clasificación — cambiado el 1/10/2026:** el profesor indicó que los umbrales de negocio del Ingenio no se pueden usar aquí (son el tema de otro documento del curso). Se reemplazaron por un método estadístico: recortar 5% de cada extremo de la distribución y dividir el resto en tercios. Umbrales resultantes: **TCH ≤127/≤155** (antes 125/150) y **Sacarosa ≤12,33/≤13,27** (antes 12,2/12,9). Esto obligó a recalcular toda la Tarea 3 de clasificación y la Tarea 4 — ver más abajo.
 - **Visualización exploratoria (sección 3.9.1, agregada a partir de la propuesta del equipo en `categorizacion variables.docx`):** mapa de calor de correlación, scatterplots de cada numérica vs. cada objetivo, boxplots de outliers de las variables predictoras, y barras/pastel para las categóricas — confirma visualmente que `Cultivo orgánico` tiene menos sacarosa y que `Tipo Quema accidental` tiene menos TCH.
 
@@ -142,37 +142,42 @@ Desarrollada en el notebook (sección 4). Protocolo: hold-out 80/20 primero, hip
 - TCH: pesan la edad (+9,5 t/ha por desviación estándar), el corte (-4,5), la distancia (-3,5) y, sobre todo, suelo y zona.
 - Sacarosa: orgánico (-1,18 pts), sin madurante (-0,70 pts) y lluvia de los 2 meses previos (-0,26 por desviación estándar). La dosis casi no agrega una vez se sabe si se aplicó madurante.
 
-**Clasificación** (`BD_IPSA_1940`, 2.187 lotes, 438 en test; logística L1/L2, logística balanceada y KNN, contra una referencia que siempre responde la clase más común) — **con los umbrales nuevos de recorte 5%+tercios**:
+**Clasificación** (`BD_IPSA_1940`, 2.187 lotes, 438 en test; logística L1/L2, logística balanceada y KNN, contra una referencia que siempre responde la clase más común) — con los umbrales de recorte 5%+tercios y, **desde el 2/10/2026, con `grupo_tenencia` y `mes` codificadas como categóricas (one-hot)**:
+
+> **Cambio (2/10/2026):** `mes` entraba como número 1-12 (escala lineal) y ahora entra como categórica; esa variable tiene un patrón estacional fuerte en sacarosa (promedio de 12,15 en junio a 13,43 en octubre) que una escala numérica no podía capturar. Además, el k de KNN en sacarosa se fijó en 13 (la búsqueda automática elegía 21 por una diferencia de 0,0006, dentro del ruido). Se recalcularon todas las cifras de clasificación de aquí en adelante.
 
 | Objetivo | Mejor F1 macro (partición al azar) | Recall "Bajo": logística normal → balanceada | Kappa |
 |---|---|---|---|
-| TCH | KNN, 0,446 (k = 3) | 0,13 → 0,43 | 0,11 a 0,16 |
-| Sacarosa | KNN, 0,467 (k = 15) | 0,34 → 0,49 | 0,16 a 0,18 |
+| TCH | KNN, 0,462 (k = 11) | 0,13 → 0,42 | 0,13 a 0,19 |
+| Sacarosa | KNN, 0,527 (k = 13 fijo); logística balanceada 0,526 | 0,46 → 0,66 | 0,23 a 0,30 |
 
-- L1 y L2 dan prácticamente lo mismo.
-- **Hallazgo (revisado con el nuevo umbral):** en TCH, bajo partición por finca-periodo, KNN (0,389) y la logística balanceada (0,384) quedan casi empatados — la ventaja de KNN se redujo pero no desapareció del todo. En sacarosa el patrón se invierte: la que más cae con esa validación es la logística balanceada (0,438→0,374), mientras KNN se mantiene estable (0,467→0,448) y gana en precisión y recall a la vez para las alertas de "Bajo" (55% / 51%, contra 45% / 49% de la logística balanceada).
-- Un signo por revisar con el Ingenio: `pct_diatrea` sale con efecto contrario al esperado en TCH Bajo — **persiste igual con los dos criterios de umbral**, así que no es un artefacto del umbral de negocio.
+- L1 y L2 dan prácticamente lo mismo (F1 en TCH: 0,405 las dos; en sacarosa: 0,512 y 0,515).
+- **Efecto de codificar `mes` como categórica:** en sacarosa el Kappa de la logística balanceada pasó de 0,168 a 0,302 (de "leve" a "razonable"); en TCH, el del mejor modelo pasó de 0,161 a 0,191.
+- **Sacarosa:** logística balanceada y KNN quedan empatadas en F1 (0,526 y 0,527). La logística gana en Kappa (0,302 contra 0,268) y detecta mejor los extremos (recall Bajo 0,66, Alto 0,70); KNN reparte el acierto de forma más pareja entre las tres clases (recall 0,54 / 0,50 / 0,53).
+- **k de KNN en sacarosa:** la curva de validación cruzada es una meseta (k = 13, 19, 21 y 27 dan F1 entre 0,525 y 0,526). Probados en datos no vistos, k = 13 supera a k = 21 (F1 0,527 contra 0,501 en el test; 0,480 contra 0,471 con partición por finca-periodo). No es que los k grandes generalicen peor: bajo finca-periodo los peores fueron k = 1 y k = 3.
+- **Robustez (partición por finca-periodo, F1 macro, azar → finca-periodo):** TCH: L2 0,405→0,369, L2 balanceada 0,419→0,351, KNN 0,462→0,429. Sacarosa: L2 0,512→0,479, L2 balanceada 0,526→0,446, KNN 0,527→0,480. KNN es el más estable en los dos objetivos; la logística balanceada es la que más cae. Parte de la ganancia de `mes` bajo partición al azar está inflada, porque todos los lotes de una misma finca-periodo comparten mes.
+- Un signo por revisar con el Ingenio: `pct_diatrea` sale con efecto contrario al esperado en TCH Bajo (coeficiente −0,30) — **persiste con los tres esquemas probados** (umbrales del Ingenio, recorte 5%+tercios con `mes` numérico y con `mes` categórica), así que no es un artefacto de la definición de los niveles ni de la codificación.
 
-**Pendiente (Tarea 4):** tablas y gráficos para el informe, y la interpretación de negocio final.
+**Pendiente (Tarea 4):** ninguno; el informe IEEE se regeneró el 3/10/2026 con estas cifras.
 
 ## Tarea 4 — Reporte de Resultados
 
-Desarrollada en el notebook (sección 5) y convertida en el informe final `Informe_Final_IEEE.docx`/`.pdf` (formato IEEE, 2 columnas, sin código). **Pendiente de regenerar el informe IEEE con los números de clasificación nuevos** (umbral de recorte 5%+tercios) — las cifras de abajo ya están actualizadas en el notebook, pero el `.docx` todavía tiene las del umbral del Ingenio.
+Desarrollada en el notebook (sección 5) y convertida en el informe final `Informe_Final_IEEE.docx`/`.pdf` (formato IEEE, 2 columnas, sin código), **regenerado el 3/10/2026 con las cifras de clasificación vigentes** (recorte 5%+tercios, `mes` y `grupo_tenencia` categóricas, k = 13 en sacarosa).
 
 **Importancia de variables (permutación):**
 
-| | Regresión (no cambia con el umbral) | Clasificación (con el umbral nuevo) |
+| | Regresión | Clasificación (logística balanceada, caída de F1) |
 |---|---|---|
-| TCH | Edad al cosechar domina (caída R² 0,182) | `cortes` domina (caída F1 0,055), `edad` 2.º (0,036) |
-| Sacarosa | Si se aplicó madurante domina (caída R² 0,201), luego lluvia 2 meses (0,106) | `lluvias` domina (caída F1 0,066), `semsmad` 2.º (0,039) |
+| TCH | Edad al cosechar domina (caída R² 0,182) | `cortes` y `edad` empatadas (0,023); `mes` 0,009 |
+| Sacarosa | Si se aplicó madurante domina (caída R² 0,201), luego lluvia 2 meses (0,106) | **`mes` domina (0,162)**, luego `lluvias` (0,031), `edad` y `semsmad` (0,022) |
 
-**Valor de negocio de las alertas "Bajo" (con el umbral nuevo):**
+**Valor de negocio de las alertas "Bajo":**
 
 | Objetivo | Modelo | Reales | Alertas | Precisión | Recall | Vs. azar |
 |---|---|---|---|---|---|---|
-| TCH | Log. balanceada | 116 | 143 | 35% | 43% | 1,3× |
-| TCH | KNN | 116 | 92 | 42% | 34% | 1,6× |
-| Sacarosa | Log. balanceada | 134 | 146 | 45% | 49% | 1,5× |
-| Sacarosa | KNN | 134 | 124 | 55% | 51% | 1,8× |
+| TCH | Log. balanceada | 116 | 138 | 35,5% | 42,2% | 1,3× |
+| TCH | KNN (k = 11) | 116 | 77 | 42,9% | 28,4% | 1,6× |
+| Sacarosa | Log. balanceada | 134 | 152 | 57,9% | 65,7% | 1,9× |
+| Sacarosa | KNN (k = 13) | 134 | 119 | 60,5% | 53,7% | 2,0× |
 
-Con el umbral nuevo, KNN gana en las dos métricas a la vez para sacarosa (ya no hay que elegir entre precisión y recall ahí); para TCH sigue existiendo el mismo compromiso que antes.
+En los dos objetivos persiste el compromiso entre precisión y recall: la logística balanceada para detectar más lotes "Bajo", KNN para emitir menos alertas pero más certeras. Con `mes` como categórica, las alertas de sacarosa mejoraron mucho frente al esquema anterior (precisión de 45-55% a 58-61%).
